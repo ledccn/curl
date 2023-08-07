@@ -1,0 +1,22 @@
+{
+    "name": "ledc/curl",
+    "description": "基于Curl的请求类库",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Ledc\\Curl\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "david",
+            "email": "367013672@qq.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "ext-curl": "*",
+        "curl/curl": "^2.5"
+    }
+}
