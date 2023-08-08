@@ -187,4 +187,17 @@ class Curl extends \Curl\Curl
         }
         return $this;
     }
+
+    /**
+     * 批量设置headers
+     * @param array $herders
+     * @return $this
+     */
+    public function setHeaders(array $herders): static
+    {
+        foreach ($herders as $key => $value) {
+            $this->setHeader($key, $value);
+        }
+        return $this;
+    }
 }
