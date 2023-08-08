@@ -32,6 +32,21 @@ class HttpPost
             $header = ['Content-Type: application/x-www-form-urlencoded; charset=UTF-8'];
             $data = http_build_query($data);
         }
+        return self::curl($url, $data, $header, $responseCode, $curlErrorCode, $curlErrorMessage);
+    }
+
+    /**
+     * 通过Curl扩展发起POST请求
+     * @param string $url 请求地址
+     * @param string $data 打包后的数据
+     * @param array $header 请求头
+     * @param int|null $responseCode 最后的响应代码
+     * @param int $curlErrorCode 返回错误代码或在没有错误发生时返回 0 (零)
+     * @param string $curlErrorMessage 返回错误信息，或者如果没有任何错误发生就返回 '' (空字符串)
+     * @return bool|string
+     */
+    final public static function curl(string $url, string $data, array $header = [], ?int &$responseCode = null, int &$curlErrorCode = 0, string &$curlErrorMessage = ''): bool|string
+    {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_POST, true);
