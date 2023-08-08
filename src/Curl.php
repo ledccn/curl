@@ -8,6 +8,10 @@ namespace Ledc\Curl;
 class Curl extends \Curl\Curl
 {
     /**
+     * @var array
+     */
+    protected array $files = [];
+    /**
      * Cookies
      * @var array
      */
@@ -34,6 +38,72 @@ class Curl extends \Curl\Curl
             }
         }
         return self::$_instance;
+    }
+
+    /**
+     * 添加待上传的文件
+     * @param string $name 表单字段名
+     * @param string $filename 文件名
+     * @param string $metadata 文件的元数据
+     * @param string|null $mime_type
+     * @return self
+     */
+    public function addFile(string $name, string $filename, string $metadata, ?string $mime_type = null): self
+    {
+        $this->files[$name] = [$filename, $metadata, $mime_type];
+        return $this;
+    }
+
+    /**
+     * @param string $url
+     * @param array $data
+     * @return self
+     */
+    public function upload(string $url, array $data = []): self
+    {
+        $this->setOpt(CURLOPT_CUSTOMREQUEST, "POST");
+        $this->setOpt(CURLOPT_URL, $url);
+        $this->prepareUploadPayload($data);
+        $this->files = [];
+        $this->exec();
+        return $this;
+    }
+
+    /**
+     * @param array $data
+     * @return void
+     */
+    private function prepareUploadPayload(array $data): void
+    {
+        $delimiter = uniqid('files');
+        $this->setOpt(CURLOPT_POST, true);
+
+        // invalid characters for "name" and "filename"
+        static $disallow = ["\0", "\"", "\r", "\n"];
+
+        $eol = "\r\n";
+        $body = '';
+        // 拼接文件流 build file parameters
+        $body .= "--" . $delimiter . $eol;
+        foreach ($this->files as $name => $item) {
+            [$filename, $metadata, $mime_type] = $item;
+            $mime_type = $mime_type ?: 'application/octet-stream';
+            $body .= 'Content-Disposition: form-data; name="' . $name . '"; filename="' . $filename . '"' . $eol;
+            $body .= 'Content-Type: ' . $mime_type . $eol . $eol;
+            $body .= $metadata . $eol;
+        }
+        // 构建正常参数 build normal parameters
+        foreach ($data as $name => $content) {
+            $name = str_replace($disallow, '_', $name);
+            $body .= "--" . $delimiter . $eol;
+            $body .= 'Content-Disposition: form-data; name="' . $name . '"' . $eol . $eol;
+            $body .= $content . $eol;
+        }
+        $body .= "--" . $delimiter . "--" . $eol;
+
+        $this->setHeader('Content-Type', 'multipart/form-data; boundary=' . $delimiter);
+        $this->setHeader('Content-Length', strlen($body));
+        $this->setOpt(CURLOPT_POSTFIELDS, $body);
     }
 
     /**

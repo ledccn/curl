@@ -22,7 +22,9 @@ composer require ledc/curl
 A few example for using CURL with get:
 
 ```php
-$curl = (new Ledc\Curl())->get('http://www.example.com/');
+use Ledc\Curl\Curl;
+
+$curl = (new Curl())->get('http://www.example.com/');
 if ($curl->isSuccess()) {
     // do something with response
     var_dump($curl->response);
@@ -31,10 +33,24 @@ if ($curl->isSuccess()) {
 $curl->close();
 ```
 
+upload file metadata
+
+```php
+use Ledc\Curl\Curl;
+
+$curl = new Curl();
+$json = '[{"length":7533293969,"path":["Brotherhood.of.the.Wolf.2001.BluRay.1080p.x265.10bit.2Audio.mkv"]},{"length":958431,"path":["cover.jpg"]},{"length":760,"path":["Brotherhood.of.the.Wolf.2001.BluRay.1080p.x265.10bit.2Audio.nfo"]}]';
+$curl->addFile('file', '1.json', $json, 'application/json');
+$curl->upload('http://www.example.com/upload');
+$response = $curl->response;
+printf($response);
+```
+
 Or with params, values will be encoded with `PHP_QUERY_RFC1738`:
 
 ```php
-$curl = (new Ledc\Curl())->get('http://www.example.com/search', [
+use Ledc\Curl\Curl;
+$curl = (new Curl())->get('http://www.example.com/search', [
     'q' => 'keyword',
 ]);
 ```
@@ -42,7 +58,8 @@ $curl = (new Ledc\Curl())->get('http://www.example.com/search', [
 An example using post
 
 ```php
-$curl = new Ledc\Curl();
+use Ledc\Curl\Curl;
+$curl = new Curl();
 $curl->post('http://www.example.com/login/', [
     'username' => 'myusername',
     'password' => 'mypassword',
@@ -52,7 +69,8 @@ $curl->post('http://www.example.com/login/', [
 An exampling using basic authentication, remove default user agent and working with error handling
 
 ```php
-$curl = new Ledc\Curl();
+use Ledc\Curl\Curl;
+$curl = new Curl();
 $curl->setBasicAuthentication('username', 'password');
 $curl->setUserAgent('');
 $curl->setHeader('X-Requested-With', 'XMLHttpRequest');
@@ -72,7 +90,8 @@ var_dump($curl->response_headers);
 SSL verification setup:
 
 ```php
-$curl = new Ledc\Curl();
+use Ledc\Curl\Curl;
+$curl = new Curl();
 $curl->setOpt(CURLOPT_RETURNTRANSFER, TRUE);
 $curl->setOpt(CURLOPT_SSL_VERIFYPEER, FALSE);
 $curl->get('https://encrypted.example.com/');
@@ -88,7 +107,8 @@ curl_close($curl->curl);
 Example of downloading a file or any other content
 
 ```php
-$curl = new Ledc\Curl();
+use Ledc\Curl\Curl;
+$curl = new Curl();
 // open the file where the request response should be written
 $file_handle = fopen($target_file, 'w+');
 // pass it to the curl resource
