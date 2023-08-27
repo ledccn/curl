@@ -141,6 +141,23 @@ class Curl extends \Curl\Curl
     }
 
     /**
+     * 设置代理服务器
+     * @param string $proxy HTTP 代理通道（地址:端口）
+     * @param string $auth 一个用来连接到代理的 "[username]:[password]" 格式的字符串
+     * @return void
+     */
+    public function setCurlProxy(string $proxy, string $auth = ''): void
+    {
+        if ($proxy) {
+            $this->setOpt(CURLOPT_PROXY, $proxy);
+
+            if ($auth) {
+                $this->setOpt(CURLOPT_PROXYUSERPWD, $auth);
+            }
+        }
+    }
+
+    /**
      * 自动跳转，跟随响应的Location
      * @param int $max 跟随次数
      * @return $this
