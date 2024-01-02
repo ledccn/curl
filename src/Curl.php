@@ -45,14 +45,33 @@ class Curl extends \Curl\Curl
     }
 
     /**
-     * 重写父类方法，携带Content-Type
-     * @param array $data
-     * @return void
+     * 设置Accept
+     * @param string $value
+     * @return $this
      */
-    protected function prepareJsonPayload(array $data)
+    public function setAccept(string $value): static
     {
-        $this->setHeader('Content-Type', 'application/json; charset=UTF-8');
-        parent::prepareJsonPayload($data);
+        return $this->setHeader('Accept', $value);
+    }
+
+    /**
+     * 设置Content-Type
+     * @param string $value
+     * @return $this
+     */
+    public function setContentType(string $value = 'application/json; charset=UTF-8'): static
+    {
+        return $this->setHeader('Content-Type', $value);
+    }
+
+    /**
+     * 设置X-Requested-With
+     * @param string $value
+     * @return $this
+     */
+    public function setXRequestedWith(string $value = 'XMLHttpRequest'): static
+    {
+        return $this->setHeader('X-Requested-With', $value);
     }
 
     /**
@@ -187,7 +206,7 @@ class Curl extends \Curl\Curl
     /**
      * Set contents of HTTP Cookie header.
      * - 重写父类方法，修复被转码的bug
-     * @param string $key   The name of the cookie
+     * @param string $key The name of the cookie
      * @param string $value The value for the provided cookie name
      * @return self
      */
