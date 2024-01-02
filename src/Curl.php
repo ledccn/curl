@@ -45,6 +45,17 @@ class Curl extends \Curl\Curl
     }
 
     /**
+     * 重写父类方法，携带Content-Type
+     * @param array $data
+     * @return void
+     */
+    protected function prepareJsonPayload(array $data)
+    {
+        $this->setHeader('Content-Type', 'application/json; charset=UTF-8');
+        parent::prepareJsonPayload($data);
+    }
+
+    /**
      * 添加待上传的文件
      * @param string $name 表单字段名
      * @param string $filename 文件名
