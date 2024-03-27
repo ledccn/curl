@@ -2,6 +2,11 @@
 
 namespace Ledc\Curl;
 
+use Error;
+use Exception;
+use InvalidArgumentException;
+use Throwable;
+
 /**
  * 自定义Curl
  */
@@ -92,13 +97,20 @@ class Curl extends \Curl\Curl
      * @param string $url
      * @param array $data
      * @return self
+     * @throws Throwable
      */
     public function upload(string $url, array $data = []): self
     {
         $this->setOpt(CURLOPT_CUSTOMREQUEST, "POST");
         $this->setOpt(CURLOPT_URL, $url);
-        $this->prepareUploadPayload($data);
-        $this->files = [];
+        try {
+            $this->prepareUploadPayload($data);
+        } catch (Error|Exception|Throwable $throwable) {
+            $this->files = [];
+            throw new InvalidArgumentException($throwable->getMessage(), $throwable->getCode());
+        } finally {
+            $this->files = [];
+        }
         $this->exec();
         return $this;
     }
