@@ -97,7 +97,6 @@ class Curl extends \Curl\Curl
      * @param string $url
      * @param array $data
      * @return self
-     * @throws Throwable
      */
     public function upload(string $url, array $data = []): self
     {
