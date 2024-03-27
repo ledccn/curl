@@ -16,7 +16,6 @@
     ],
     "require": {
         "php": ">=8.1",
-        "ext-curl": "*",
-        "curl/curl": "^2.5"
+        "ext-curl": "*"
     }
 }

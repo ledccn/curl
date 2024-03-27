@@ -5,13 +5,14 @@ namespace Ledc\Curl;
 /**
  * 简单的POST请求
  */
-class HttpPost
+final class HttpPost
 {
     /**
      * 超时，单位：秒
      * @var int
      */
     public static int $timeout = 5;
+
     /**
      * 简单的POST请求
      * - 用curl实现
@@ -23,7 +24,7 @@ class HttpPost
      * @param string $curlErrorMessage 返回错误信息，或者如果没有任何错误发生就返回 '' (空字符串)
      * @return bool|string
      */
-    final public static function request(string $url, object|array $data = [], bool $isJsonRequest = true, ?int &$responseCode = null, int &$curlErrorCode = 0, string &$curlErrorMessage = ''): bool|string
+    public static function request(string $url, object|array $data = [], bool $isJsonRequest = true, ?int &$responseCode = null, int &$curlErrorCode = 0, string &$curlErrorMessage = ''): bool|string
     {
         if ($isJsonRequest) {
             $header = ['Content-Type: application/json; charset=UTF-8'];
@@ -45,7 +46,7 @@ class HttpPost
      * @param string $curlErrorMessage 返回错误信息，或者如果没有任何错误发生就返回 '' (空字符串)
      * @return bool|string
      */
-    final public static function curl(string $url, string $data, array $header = [], ?int &$responseCode = null, int &$curlErrorCode = 0, string &$curlErrorMessage = ''): bool|string
+    public static function curl(string $url, string $data, array $header = [], ?int &$responseCode = null, int &$curlErrorCode = 0, string &$curlErrorMessage = ''): bool|string
     {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -80,7 +81,7 @@ class HttpPost
      * @param bool $isJsonRequest 是否Json请求
      * @return false|string
      */
-    final public static function stream(string $url, object|array $data, bool $isJsonRequest = true): bool|string
+    public static function stream(string $url, object|array $data, bool $isJsonRequest = true): bool|string
     {
         if ($isJsonRequest) {
             $type = 'Content-Type: application/json; charset=UTF-8';
