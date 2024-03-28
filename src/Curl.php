@@ -835,17 +835,33 @@ class Curl
     }
 
     /**
-     * 上传文件
+     * 构造formData文件数组
+     * @param string $name 表单字段名
+     * @param string $filename 文件名
+     * @param string $metadata 文件的元数据
+     * @param string|null $mime_type
+     * @return array[]
+     */
+    public static function buildFormDataFile(string $name, string $filename, string $metadata, ?string $mime_type = null): array
+    {
+        return [
+            $name => [$filename, $metadata, $mime_type],
+        ];
+    }
+
+    /**
+     * 上传文件元数据
      * @param string $url
      * @param array $data
+     * @param array $files
      * @return self
      */
-    public function upload(string $url, array $data = []): self
+    public function upload(string $url, array $data = [], array $files = []): self
     {
         $this->setOpt(CURLOPT_CUSTOMREQUEST, "POST");
         $this->setOpt(CURLOPT_URL, $url);
         try {
-            $this->prepareFormDataPayload($data);
+            $this->prepareFormDataPayload($data, $files);
         } catch (Error|Exception|Throwable $throwable) {
             $this->files = [];
             throw new InvalidArgumentException($throwable->getMessage(), $throwable->getCode());
@@ -857,38 +873,48 @@ class Curl
     }
 
     /**
-     * @param array $data
+     * 构建form-data数据流
+     * @param array $data 正常数据
+     * @param array $files 要上传的文件
      * @return void
      */
-    private function prepareFormDataPayload(array $data): void
+    private function prepareFormDataPayload(array $data, array $files = []): void
     {
-        $delimiter = str_replace('.', '', uniqid('files', true));
+        $boundary = str_replace('.', '', uniqid('--------------------files', true));
         // invalid characters for "name" and "filename"
         static $disallow = ["\0", "\"", "\r", "\n"];
 
         $eol = "\r\n";
         $body = '';
-        // 拼接文件流 build file parameters
-        foreach ($this->files as $name => $item) {
-            $name = str_replace($disallow, '_', $name);
-            [$filename, $metadata, $mime_type] = $item;
-            $mime_type = $mime_type ?: 'application/octet-stream';
-            $body .= "--" . $delimiter . $eol;
-            $body .= 'Content-Disposition: form-data; name="' . $name . '"; filename="' . $filename . '"' . $eol;
-            $body .= 'Content-Type: ' . $mime_type . $eol . $eol;
-            $body .= $metadata . $eol;
-        }
+
+        // 拼接文件流
+        $build_file_parameters = function (array $files) use (&$body, $boundary, $disallow, $eol) {
+            // 拼接文件流 build file parameters
+            foreach ($files as $name => $item) {
+                [$filename, $metadata, $mime_type] = $item;
+                $name = str_replace($disallow, '_', $name);
+                $filename = str_replace($disallow, '_', $filename);
+                $mime_type = $mime_type ?: 'application/octet-stream';
+                $body .= "--" . $boundary . $eol;
+                $body .= 'Content-Disposition: form-data; name="' . $name . '"; filename="' . $filename . '"' . $eol;
+                $body .= 'Content-Type: ' . $mime_type . $eol . $eol;
+                $body .= $metadata . $eol;
+            }
+        };
+        $build_file_parameters($this->files);
+        $build_file_parameters($files);
+
         // 构建正常参数 build normal parameters
         foreach ($data as $name => $content) {
             $name = str_replace($disallow, '_', $name);
-            $body .= "--" . $delimiter . $eol;
+            $body .= "--" . $boundary . $eol;
             $body .= 'Content-Disposition: form-data; name="' . $name . '"' . $eol . $eol;
             $body .= $content . $eol;
         }
-        $body .= "--" . $delimiter . "--" . $eol;
+        $body .= "--" . $boundary . "--" . $eol;
 
         $this->setOpt(CURLOPT_POST, true);
-        $this->setHeader('Content-Type', 'multipart/form-data; boundary=' . $delimiter);
+        $this->setHeader('Content-Type', 'multipart/form-data; boundary=' . $boundary);
         $this->setHeader('Content-Length', strlen($body));
         $this->setOpt(CURLOPT_POSTFIELDS, $body);
     }
