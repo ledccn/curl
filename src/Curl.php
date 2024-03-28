@@ -862,19 +862,18 @@ class Curl
      */
     private function prepareFormDataPayload(array $data): void
     {
-        $delimiter = uniqid('files');
-        $this->setOpt(CURLOPT_POST, true);
-
+        $delimiter = str_replace('.', '', uniqid('files', true));
         // invalid characters for "name" and "filename"
         static $disallow = ["\0", "\"", "\r", "\n"];
 
         $eol = "\r\n";
         $body = '';
         // 拼接文件流 build file parameters
-        $body .= "--" . $delimiter . $eol;
         foreach ($this->files as $name => $item) {
+            $name = str_replace($disallow, '_', $name);
             [$filename, $metadata, $mime_type] = $item;
             $mime_type = $mime_type ?: 'application/octet-stream';
+            $body .= "--" . $delimiter . $eol;
             $body .= 'Content-Disposition: form-data; name="' . $name . '"; filename="' . $filename . '"' . $eol;
             $body .= 'Content-Type: ' . $mime_type . $eol . $eol;
             $body .= $metadata . $eol;
@@ -888,6 +887,7 @@ class Curl
         }
         $body .= "--" . $delimiter . "--" . $eol;
 
+        $this->setOpt(CURLOPT_POST, true);
         $this->setHeader('Content-Type', 'multipart/form-data; boundary=' . $delimiter);
         $this->setHeader('Content-Length', strlen($body));
         $this->setOpt(CURLOPT_POSTFIELDS, $body);
