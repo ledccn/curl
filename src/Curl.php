@@ -144,8 +144,7 @@ class Curl
     protected bool $response_header_continue = false;
 
     /**
-     * Constructor ensures the available curl extension is loaded.
-     *
+     * 构造函数
      * @throws RuntimeException
      */
     public function __construct()
@@ -154,7 +153,6 @@ class Curl
             throw new RuntimeException('The cURL extensions is not loaded, make sure you have installed the cURL extension: https://php.net/manual/curl.setup.php');
         }
 
-        static::$instance = $this;
         $this->init();
     }
 
@@ -566,7 +564,7 @@ class Curl
      * Enable verbosity.
      *
      * @param bool $on
-     * @return self
+     * @return static
      */
     public function setVerbose(bool $on = true): static
     {
@@ -576,11 +574,11 @@ class Curl
 
     /**
      * @param bool $on
-     * @return self
+     * @return static
      * @deprecated Call setVerbose() instead. Will be removed in 3.0
      *
      */
-    public function verbose(bool $on = true): Curl|static
+    public function verbose(bool $on = true): static
     {
         return $this->setVerbose($on);
     }
@@ -779,13 +777,10 @@ class Curl
     {
         if (null === static::$instance) {
             static::$instance = new static();
+            return static::$instance;
         } else {
-            // 重置
-            if ($reset) {
-                static::$instance->reset();
-            }
+            return $reset ? static::$instance->reset() : static::$instance;
         }
-        return static::$instance;
     }
 
     /**
