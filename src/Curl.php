@@ -4,6 +4,7 @@ namespace Ledc\Curl;
 
 use CurlFile;
 use CurlHandle;
+use CURLStringFile;
 use Error;
 use Exception;
 use InvalidArgumentException;
@@ -19,12 +20,6 @@ class Curl
      * @var string The user agent name which is set when making a request
      */
     const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36';
-
-    /**
-     * 单例
-     * @var Curl|null
-     */
-    protected static ?Curl $instance = null;
 
     // The HTTP authentication method(s) to use.
 
@@ -63,7 +58,7 @@ class Curl
      */
     protected array $_headers = [];
     /**
-     * @var array
+     * @var array<string, CURLStringFile>
      */
     protected array $files = [];
     /**
@@ -231,7 +226,7 @@ class Curl
         if (is_array($data) || is_object($data)) {
             $skip = false;
             foreach ($data as $key => $value) {
-                if ($value instanceof CurlFile) {
+                if (($value instanceof CurlFile) || ($value instanceof CURLStringFile)) {
                     $skip = true;
                 }
             }
@@ -769,17 +764,27 @@ class Curl
     }
 
     /**
-     * 单例
+     * 创建一个新实例
+     * @return static
+     */
+    public static function make(): static
+    {
+        return new static();
+    }
+
+    /**
+     * 单例模式
      * @param bool $reset 是否重置Curl(默认true)
      * @return static
      */
     public static function getInstance(bool $reset = true): static
     {
-        if (null === static::$instance) {
-            static::$instance = new static();
-            return static::$instance;
+        static $instance = null;
+        if (null === $instance) {
+            $instance = new static();
+            return $instance;
         } else {
-            return $reset ? static::$instance->reset() : static::$instance;
+            return $reset ? $instance->reset() : $instance;
         }
     }
 
@@ -818,30 +823,15 @@ class Curl
     /**
      * 添加待上传的文件
      * @param string $name 表单字段名
-     * @param string $filename 文件名
+     * @param string $filename 上传数据中的文件名称
      * @param string $metadata 文件的元数据
-     * @param string|null $mime_type
+     * @param string $mime_type mime类型
      * @return self
      */
-    public function addFile(string $name, string $filename, string $metadata, ?string $mime_type = null): self
+    public function addFile(string $name, string $filename, string $metadata, string $mime_type = 'application/octet-stream'): self
     {
-        $this->files[$name] = [$filename, $metadata, $mime_type];
+        $this->files[$name] = new CURLStringFile($metadata, $filename, $mime_type ?: 'application/octet-stream');
         return $this;
-    }
-
-    /**
-     * 构造formData文件数组
-     * @param string $name 表单字段名
-     * @param string $filename 文件名
-     * @param string $metadata 文件的元数据
-     * @param string|null $mime_type
-     * @return array[]
-     */
-    public static function buildFormDataFile(string $name, string $filename, string $metadata, ?string $mime_type = null): array
-    {
-        return [
-            $name => [$filename, $metadata, $mime_type],
-        ];
     }
 
     /**
@@ -873,7 +863,7 @@ class Curl
      * @param array $files 要上传的文件
      * @return void
      */
-    private function prepareFormDataPayload(array $data, array $files = []): void
+    protected function prepareFormDataPayload(array $data, array $files = []): void
     {
         $boundary = str_replace('.', '', uniqid('--------------------files', true));
         // invalid characters for "name" and "filename"
@@ -885,15 +875,17 @@ class Curl
         // 拼接文件流
         $build_file_parameters = function (array $files) use (&$body, $boundary, $disallow, $eol) {
             // 拼接文件流 build file parameters
-            foreach ($files as $name => $item) {
-                [$filename, $metadata, $mime_type] = $item;
+            /**
+             * @var string $name
+             * @var CURLStringFile $stringFile
+             */
+            foreach ($files as $name => $stringFile) {
                 $name = str_replace($disallow, '_', $name);
-                $filename = str_replace($disallow, '_', $filename);
-                $mime_type = $mime_type ?: 'application/octet-stream';
+                $filename = str_replace($disallow, '_', $stringFile->postname);
                 $body .= "--" . $boundary . $eol;
                 $body .= 'Content-Disposition: form-data; name="' . $name . '"; filename="' . $filename . '"' . $eol;
-                $body .= 'Content-Type: ' . $mime_type . $eol . $eol;
-                $body .= $metadata . $eol;
+                $body .= 'Content-Type: ' . $stringFile->mime . $eol . $eol;
+                $body .= $stringFile->data . $eol;
             }
         };
         $build_file_parameters($this->files);
@@ -915,7 +907,7 @@ class Curl
     }
 
     /**
-     * 公共设置
+     * 设置超时
      * @param int $connectTimeout 尝试连接时等待的秒数
      * @param int $timeout 允许 cURL 函数执行的最长秒数
      * @return self
@@ -978,8 +970,9 @@ class Curl
     }
 
     /**
-     * Set contents of HTTP Cookie header.
-     * - 重写父类方法，修复被转码的bug
+     * 设置HTTP请求头的cookie
+     * - Set contents of HTTP Cookie header.
+     * - 修复被转码的bug
      * @param string $key The name of the cookie
      * @param string $value The value for the provided cookie name
      * @return self
@@ -987,17 +980,16 @@ class Curl
     public function setCookie(string $key, string $value): self
     {
         $this->_cookies[$key] = $value;
-        $_cookies = [];
+        $cookies = [];
         foreach ($this->_cookies as $key => $value) {
-            $_cookies[] = $key . '=' . $value;
+            $cookies[] = $key . '=' . $value;
         }
-        $cookie = implode('; ', $_cookies);
-        $this->setOpt(CURLOPT_COOKIE, $cookie);
+        $this->setOpt(CURLOPT_COOKIE, implode('; ', $cookies));
         return $this;
     }
 
     /**
-     * 批量设置cookies
+     * 批量设置HTTP请求头的cookie
      * @param string|array $cookies
      * @return $this
      */
