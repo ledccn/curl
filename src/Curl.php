@@ -303,7 +303,7 @@ class Curl
      * @param string|null $hostName An optional hostname which will be sent as http host header
      * @return self
      */
-    public function purge(string $url, string $hostName = null): static
+    public function purge(string $url, ?string $hostName = null): static
     {
         $this->setOpt(CURLOPT_URL, $url);
         $this->setOpt(CURLOPT_CUSTOMREQUEST, 'PURGE');
@@ -704,7 +704,7 @@ class Curl
      * @return bool|string|array
      * @since 1.9
      */
-    public function getResponseHeaders(string $headerKey = null): bool|array|string
+    public function getResponseHeaders(?string $headerKey = null): bool|array|string
     {
         $headers = [];
         if (!is_null($headerKey)) {
