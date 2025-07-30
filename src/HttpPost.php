@@ -67,7 +67,7 @@ final class HttpPost
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);    // 自动跳转，跟随请求Location
         curl_setopt($ch, CURLOPT_MAXREDIRS, 2);         // 递归次数
         $response = curl_exec($ch);
-        $responseCode = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $responseCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
         $curlErrorCode = curl_errno($ch);
         $curlErrorMessage = curl_error($ch);
         curl_close($ch);

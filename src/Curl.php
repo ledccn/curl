@@ -199,12 +199,12 @@ class Curl
      */
     public function exec(): int
     {
-        $this->setOpt(CURLOPT_HEADERFUNCTION, array($this, 'addResponseHeaderLine'));
+        $this->setOpt(CURLOPT_HEADERFUNCTION, [$this, 'addResponseHeaderLine']);
         $this->response_headers = [];
         $this->response = curl_exec($this->curl);
         $this->curl_error_code = curl_errno($this->curl);
         $this->curl_error_message = curl_error($this->curl);
-        $this->curl_error = !($this->getErrorCode() === 0);
+        $this->curl_error = $this->getErrorCode() !== 0;
         $this->http_status_code = intval(curl_getinfo($this->curl, CURLINFO_HTTP_CODE));
         $this->http_error = $this->isError();
         $this->error = $this->curl_error || $this->http_error;
@@ -225,7 +225,7 @@ class Curl
 
         if (is_array($data) || is_object($data)) {
             $skip = false;
-            foreach ($data as $key => $value) {
+            foreach ($data as $value) {
                 if (($value instanceof CurlFile) || ($value instanceof CURLStringFile)) {
                     $skip = true;
                 }
@@ -712,7 +712,7 @@ class Curl
         }
 
         foreach ($this->response_headers as $header) {
-            $parts = explode(":", $header, 2);
+            $parts = explode(":", (string)$header, 2);
 
             $key = $parts[0] ?? '';
             $value = $parts[1] ?? '';
@@ -873,7 +873,7 @@ class Curl
         $body = '';
 
         // 拼接文件流
-        $build_file_parameters = function (array $files) use (&$body, $boundary, $disallow, $eol) {
+        $build_file_parameters = function (array $files) use (&$body, $boundary, $disallow, $eol): void {
             // 拼接文件流 build file parameters
             /**
              * @var string $name
